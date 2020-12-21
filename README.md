@@ -1,6 +1,6 @@
 # safehdrhistogram
 
-The safehdrhistogram package is a wrapper around github.com/HdrHistogram/histogram-go that provides safe concurrent
+The safehdrhistogram package is a wrapper around https://github.com/HdrHistogram/histogram-go that provides safe concurrent
 access to a hdrhistogram.Histogram, or a collection of named instances of hdrhistogram.Histogram.
 
 The wrapped histogram-go package is a functional version of HdrHistogram, but does not provide any support for 
