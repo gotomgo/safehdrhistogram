@@ -1,6 +1,8 @@
 package safehdrhistogram
 
 import (
+	"fmt"
+	"io"
 	"time"
 
 	"github.com/HdrHistogram/hdrhistogram-go"
@@ -29,6 +31,30 @@ type Percentiles struct {
 	StartTime   int64        `json:"startTime"`
 	EndTime     int64        `json:"endTime"`
 	Tag         string       `json:"tag"`
+}
+
+// Write produces reasonably well formatted output for Percentiles
+func (p Percentiles) Write(writer io.Writer) (err error) {
+	_, err = writer.Write([]byte(fmt.Sprintf("%12s %12s %12s\n", "Value", "Percentile", "TotalCount")))
+	if err != nil {
+		return
+	}
+
+	for _, perc := range p.Percentiles {
+		_, err = writer.Write([]byte(fmt.Sprintf("%12d %12f %12d\n", perc.Value, perc.Percentile, perc.Count)))
+		if err != nil {
+			return
+		}
+	}
+
+	footer := fmt.Sprintf("  [Min = %d, Max = %d, Total count = %d]\n",
+		p.MinValue,
+		p.MaxValue,
+		p.TotalCount,
+	)
+	_, err = writer.Write([]byte(footer))
+
+	return
 }
 
 func getPercentiles(hist *hdrhistogram.Histogram) (result Percentiles) {
