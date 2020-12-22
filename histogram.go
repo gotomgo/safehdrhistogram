@@ -6,7 +6,7 @@ import (
 
 // Histogram is a wrapper around hdrhistogram.Histogram that uses a
 // command channel to safely manipulate the histogram when there are multiple
-// writers
+// readers and writers
 type Histogram struct {
 	hist *hdrhistogram.Histogram
 	cmds chan command
@@ -111,7 +111,7 @@ func (hdr *Histogram) RequestSnapshot(snap SnapshotChannel, reset bool) {
 }
 
 // Snapshot blocks until a snapshot request completes
-func (hdr *Histogram) Snapshot(reset bool) Snapshot {
+func (hdr *Histogram) Snapshot(reset bool) *Snapshot {
 	// create a channel for the snapshot
 	snap := make(SnapshotChannel)
 	defer close(snap)
@@ -160,7 +160,7 @@ func (hdr *Histogram) RequestPercentiles(perc PercentilesChannel, reset bool) {
 }
 
 // Snapshot blocks until a snapshot request completes
-func (hdr *Histogram) Percentiles(reset bool) Percentiles {
+func (hdr *Histogram) Percentiles(reset bool) *Percentiles {
 	// create a channel for the percentiles
 	perc := make(PercentilesChannel)
 	defer close(perc)

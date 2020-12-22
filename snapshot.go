@@ -7,7 +7,7 @@ import (
 )
 
 // SnapshotChannel is used for non-blocking snapshot requests
-type SnapshotChannel chan Snapshot
+type SnapshotChannel chan *Snapshot
 
 // Snapshot represents a snapshot of a hdrhistogram.Histogram
 type Snapshot struct {
@@ -18,7 +18,7 @@ type Snapshot struct {
 }
 
 // ToHistogram converts an Snapshot to a hdrhistogram.Histogram
-func (snapshot Snapshot) ToHistogram() (result *hdrhistogram.Histogram) {
+func (snapshot *Snapshot) ToHistogram() (result *hdrhistogram.Histogram) {
 	result = hdrhistogram.Import(snapshot.Snapshot)
 	result.SetStartTimeMs(snapshot.StartTime)
 	result.SetEndTimeMs(snapshot.EndTime)
@@ -26,8 +26,8 @@ func (snapshot Snapshot) ToHistogram() (result *hdrhistogram.Histogram) {
 	return
 }
 
-func getSnapshot(hist *hdrhistogram.Histogram) Snapshot {
-	return Snapshot{
+func getSnapshot(hist *hdrhistogram.Histogram) *Snapshot {
+	return &Snapshot{
 		Snapshot:  hist.Export(),
 		StartTime: hist.StartTimeMs(),
 		EndTime:   time.Now().UTC().UnixNano() / 1e6,

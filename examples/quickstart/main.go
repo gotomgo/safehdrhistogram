@@ -22,6 +22,7 @@ func dumpPercentiles(hist *safehdrhistogram.Histogram, done <-chan bool) {
 		}
 	}
 }
+
 func main() {
 	// Create a concurrency safe version of HdrHistogram using the standard parameters
 	hist := safehdrhistogram.NewHistogram(1, 30000000, 3)

@@ -9,7 +9,7 @@ import (
 )
 
 // PercentilesChannel is used for non-blocking percentiles requests
-type PercentilesChannel chan Percentiles
+type PercentilesChannel chan *Percentiles
 
 // Percentile represents a percentile, it's value, and cumulative count
 type Percentile struct {
@@ -34,7 +34,7 @@ type Percentiles struct {
 }
 
 // Write produces reasonably well formatted output for Percentiles
-func (p Percentiles) Write(writer io.Writer) (err error) {
+func (p *Percentiles) Write(writer io.Writer) (err error) {
 	_, err = writer.Write([]byte(fmt.Sprintf("%12s %12s %12s\n", "Value", "Percentile", "TotalCount")))
 	if err != nil {
 		return
@@ -57,8 +57,8 @@ func (p Percentiles) Write(writer io.Writer) (err error) {
 	return
 }
 
-func getPercentiles(hist *hdrhistogram.Histogram) (result Percentiles) {
-	result = Percentiles{
+func getPercentiles(hist *hdrhistogram.Histogram) (result *Percentiles) {
+	result = &Percentiles{
 		MinValue:   hist.Min(),
 		MaxValue:   hist.Max(),
 		TotalCount: hist.TotalCount(),

@@ -70,7 +70,7 @@ func shipPercentiles(
 	server string,
 	hist *safehdrhistorgram,
 	interval time.Duration,
-	resetHist bool,
+	autoReset bool,
 	done <-chan bool) {
     for {
         select {
@@ -78,7 +78,7 @@ func shipPercentiles(
                 return
             case <-time.After(interval):
             	// send to server (code not shown)
-                sendPercentiles(server,hist.Percentiles(resetHist))
+                sendPercentiles(server,hist.Percentiles(autoReset))
         }
     }
 }

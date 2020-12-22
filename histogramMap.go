@@ -153,7 +153,7 @@ func (hdr *HistogramMap) RequestSnapshot(snap SnapshotChannel, reset bool, names
 }
 
 // Snapshot blocks until a snapshot request completes
-func (hdr *HistogramMap) Snapshot(name string, reset bool) Snapshot {
+func (hdr *HistogramMap) Snapshot(name string, reset bool) *Snapshot {
 	// get/create a histogram for name
 	hist := hdr.resolveHistogram(name)
 
@@ -255,7 +255,7 @@ func (hdr *HistogramMap) RequestPercentiles(perc PercentilesChannel, reset bool,
 }
 
 // Percentiles blocks until a percentiles snapshot request completes
-func (hdr *HistogramMap) Percentiles(name string, reset bool) Percentiles {
+func (hdr *HistogramMap) Percentiles(name string, reset bool) *Percentiles {
 	// get/create a histogram for name
 	hist := hdr.resolveHistogram(name)
 
