@@ -1,26 +1,105 @@
-# safehdrhistogram
+# Concurrency Safe HDR Historgram
 
-The safehdrhistogram package is a wrapper around https://github.com/HdrHistogram/histogram-go that provides safe concurrent
-access to a hdrhistogram.Histogram, or a collection of named instances of hdrhistogram.Histogram.
+safehdrhistogram is a GO (Golang) package that wraps https://github.com/HdrHistogram/histogram-go with safe, 
+concurrent read and write access to a hdrhistogram.Histogram, or a collection of named instances of hdrhistogram.Histogram
+(see HistogramMap)
 
-The wrapped histogram-go package is a functional version of HdrHistogram, but does not provide any support for 
-concurrent access. While there are many use cases where you might not need (or want) concurrent access to a Histogram, 
-there are many uses cases where having a concurrency safe implementation is a good thing.
+## Installation
 
-In addition, the histogram-go package has some fairly minor flaws which are easy to correct without forking the 
-original package and having to maintain those changes. Most of these flaws are around maintaining minor histogram state
-(start time, end time, and tag) through the export/import process (typically referred to as snapshots), and to some 
-degree, histogram resets. Again, these are minor flaws, and while I can say with confidence that I would update the 
-original package to address these issues, others would likely argue for something different. I also consider the
-existing support for exporting Percentiles to be fairly hokey, as it does not support structured output (unless 
-parsing text is your thing.) I added exporting Percentile information in a structured way, which is ideal for 
-interval based collection and reporting.
+```sh
+$ go get -u github.com/gotomgo/safhdrhistogram
+```
 
-There are a variety of ways to create safe concurrent access to data structures in GO, channels is generally the best
-option when maximum concurrency is desirable. Although a simple locking system could have been used (similar to other
-atomic implementations), using channels seems very natural and idiomatic. In addition, I expect that channels is the
-best way to maximize concurrent throughput for my use cases. Actual measurement to prove that conjecture will have to wait until I
-have had more time to play-test the API in real world production scenarios.
+### import
+
+```go
+import "github.com/gotomgo/safehdrhistogram"
+```
+
+### optional import
+When you need or want to access the underlying hdrhistogram package directly:
+
+```go
+import "github.com/HdrHistogram/hdrhistogram-go"
+```
+
+## Quick Start
+
+### Create Histogram 
+```go
+// Create a concurrency safe version of HdrHistogram using the standard parameters 
+hist := safehdrhistogram.NewHistogram(1, 30000000, 3)
+```
+
+### Create a Histogram using a configuration
+```go
+// Create a concurrency safe version of HdrHistogram using configuration values 
+hist := safehdrhistogram.NewHistogramFromConfig(
+		safehdrhistogram.HistogramConfig{
+			LowestDiscernibleValue:         lowestDiscernibleValue,
+			HighestTrackableValue:          highestTrackableValue,
+			NumberOfSignificantValueDigits: numberOfSignificantValueDigits,
+			CommandBufferSize:              32,
+		})
+```
+
+### Record Value
+```go
+startTime := time.Now()
+// ... do some work here
+hist.RecordValue(time.Since(startTime).Microseconds())
+```
+
+### Go Routine to ship Percentiles
+```go
+func shipPercentiles(server string,hist *safehdrhistorgram,done <-chan bool) {
+    for {
+        select {
+            case <-done:
+                return
+            case <-time.After(time.Duration(60) * time.Second):
+                sendPercentiles(server,hist.Percentiles(false))
+        }
+    }
+}
+```
+
+### Go Routine to ship Percentiles (fully parameterized)
+```go
+func shipPercentiles(
+	server string,
+	hist *safehdrhistorgram,
+	interval time.Duration,
+	resetHist bool,
+	done <-chan bool) {
+    for {
+        select {
+            case <-done:
+                return
+            case <-time.After(interval):
+            	// send to server (code not shown)
+                sendPercentiles(server,hist.Percentiles(resetHist))
+        }
+    }
+}
+```
+
+### Go Routine to ship Snapshots
+```go
+func shipSnapshot(server string,hist *safehdrhistorgram,done <-chan bool) {
+    for {
+        select {
+            case <-done:
+                return
+            case <-time.After(time.Duration(60) * time.Second):
+                // send to server (code not shown)
+                sendSnapshot(server,hist.Snapshot(false))
+        }
+    }
+}
+```
+
+## Examples
 
 ## About HdrHistogram
 A good summary of HdrHistogram can be found here: https://github.com/HdrHistogram/HdrHistogram
@@ -29,6 +108,6 @@ One of the many presentations by the creator of HdrHistogram, Gil Tene, called '
 can be found here: https://www.youtube.com/watch?v=lJ8ydIuPFeU&feature=youtu.be
 
 A great blog post by Tyler Treat, 'Everything you know about latency is Wrong' which does an excellent job of 
-summarizing a Gile Tene presentation, can be found here: 
+summarizing a Gil Tene presentation, can be found here: 
 https://bravenewgeek.com/everything-you-know-about-latency-is-wrong/
 
