@@ -32,13 +32,25 @@ func NewHistogram(
 // NewHistogramFromConfig creates an instance of hdrhistogram.Histogram that is
 // safe for concurrent use based on values from a HistogramConfig
 func NewHistogramFromConfig(config HistogramConfig) *Histogram {
-	hdr := &Histogram{
-		hist: hdrhistogram.New(
+	return newHistogram(
+		hdrhistogram.New(
 			config.LowestDiscernibleValue,
 			config.HighestTrackableValue,
 			config.NumberOfSignificantValueDigits),
+		config.CommandBufferSize)
+}
+
+// newHistogram creates a new Histogram and starts processing
+//
+//	Notes
+//		This func waits for the Start command to be processed before
+//		returning
+//
+func newHistogram(hist *hdrhistogram.Histogram, commandBufferSize int) *Histogram {
+	hdr := &Histogram{
+		hist: hist,
 		done: make(chan bool),
-		cmds: make(chan command, config.CommandBufferSize),
+		cmds: make(chan command, commandBufferSize),
 	}
 
 	// start the cmd processor using the done channel associated with the
@@ -62,6 +74,21 @@ func NewHistogramFromConfig(config HistogramConfig) *Histogram {
 	return hdr
 }
 
+// NewHistogramFromSnapshot re-creates a Histogram from a snapshot
+func NewHistogramFromSnapshot(snapshot *Snapshot) *Histogram {
+	return newHistogram(snapshot.ToHistogram(), DefaultCommandBufferSize)
+}
+
+// WithTag sets the tag associated with the Histogram
+//
+//	Notes
+//		This method is not safe for concurrency and is only intended to be
+//		used in expressions of this form:
+//			NewHistogram(...).WithTag("myTag")
+//
+//		but can be used in cases where you can guarantee single goroutine
+//		access.
+//
 func (hdr *Histogram) WithTag(tag string) *Histogram {
 	hdr.hist.SetTag(tag)
 	return hdr
