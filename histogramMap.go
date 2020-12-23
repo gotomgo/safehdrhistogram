@@ -19,8 +19,9 @@ type HistogramMap struct {
 	done   chan bool
 
 	// the collection of histograms, protected by a mutex
-	lock  sync.RWMutex
-	hists map[string]*hdrhistogram.Histogram
+	lock      sync.RWMutex
+	hists     map[string]*hdrhistogram.Histogram
+	histNames []string
 }
 
 // NewHistogramMap creates a collection to manage named instances of
@@ -85,6 +86,7 @@ func (hdr *HistogramMap) resolveHistogram(name string) *hdrhistogram.Histogram {
 
 		// remember it
 		hdr.hists[name] = hist
+		hdr.histNames = append(hdr.histNames, name)
 
 		// issue a start command to initialize it
 		//
@@ -98,6 +100,14 @@ func (hdr *HistogramMap) resolveHistogram(name string) *hdrhistogram.Histogram {
 	}
 
 	return hist
+}
+
+// Names returns the currently active histogram names
+func (hdr *HistogramMap) Names() []string {
+	hdr.lock.Lock()
+	defer hdr.lock.Unlock()
+
+	return append([]string(nil), hdr.histNames...) // return a copy
 }
 
 // RequestRecord requests that a value be recorded but will not block if the
@@ -423,7 +433,6 @@ func (hdr *HistogramMap) Close() map[string]*hdrhistogram.Histogram {
 	// close the channel to terminate processing once queued commands are
 	// consumed. Leave the channel as non-nil so any callers will panic.
 	// the alternative is to set it to nil and callers will deadlock
-	// (RequestRecord is an exception)
 	close(hdr.cmds)
 
 	// wait for process to signal (channel is unbuffered so process is blocked
