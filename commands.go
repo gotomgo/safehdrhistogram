@@ -61,7 +61,9 @@ func process(commands <-chan command, done chan bool) {
 func processCommand(cmd command) (err error) {
 	switch cmd.command {
 	case cmdStart:
-		cmd.hist.SetStartTimeMs(time.Now().UTC().UnixNano() / 1e6)
+		if cmd.hist.StartTimeMs() == 0 {
+			cmd.hist.SetStartTimeMs(time.Now().UTC().UnixNano() / 1e6)
+		}
 
 		if cmd.arg != nil {
 			cmd.arg.(chan bool) <- true
@@ -75,9 +77,9 @@ func processCommand(cmd command) (err error) {
 	case cmdRecord:
 		err = cmd.hist.RecordValue(cmd.arg.(int64))
 	case cmdSnapshot:
-		cmd.arg.(SnapshotChannel) <- getSnapshot(cmd.hist)
+		cmd.arg.(SnapshotChannel) <- CreateSnapshot(cmd.hist)
 	case cmdPercentiles:
-		cmd.arg.(PercentilesChannel) <- getPercentiles(cmd.hist)
+		cmd.arg.(PercentilesChannel) <- CreatePercentiles(cmd.hist)
 	case cmdSync:
 		cmd.arg.(chan bool) <- true
 	case cmdReset:

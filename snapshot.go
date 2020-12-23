@@ -26,7 +26,8 @@ func (snapshot *Snapshot) ToHistogram() (result *hdrhistogram.Histogram) {
 	return
 }
 
-func getSnapshot(hist *hdrhistogram.Histogram) *Snapshot {
+// CreateSnapshot creates an instance of Snapshot from a hdrhistogram.Histogram
+func CreateSnapshot(hist *hdrhistogram.Histogram) *Snapshot {
 	return &Snapshot{
 		Snapshot:  hist.Export(),
 		StartTime: hist.StartTimeMs(),

@@ -57,7 +57,9 @@ func (p *Percentiles) Write(writer io.Writer) (err error) {
 	return
 }
 
-func getPercentiles(hist *hdrhistogram.Histogram) (result *Percentiles) {
+// CreatePercentiles creates an instance of Percentiles from a
+// hdrhistogram.Histogram
+func CreatePercentiles(hist *hdrhistogram.Histogram) (result *Percentiles) {
 	result = &Percentiles{
 		MinValue:   hist.Min(),
 		MaxValue:   hist.Max(),
